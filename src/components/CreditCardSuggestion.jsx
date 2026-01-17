@@ -15,28 +15,32 @@ export const CreditCardSuggestion = ({ card, index }) => {
       {/* Dynamic Gradient Background Glow */}
       <div className={cn("absolute top-0 left-0 right-0 h-32 bg-gradient-to-b opacity-20 blur-2xl pointer-events-none", card.colors)} />
 
-      {/* Badge */}
-      {card.highlight && (
-        <div className="absolute top-4 right-4 px-3 py-1 bg-gradient-to-r from-yellow-500/20 to-orange-500/20 border border-yellow-500/30 rounded-full">
-          <span className="text-xs font-bold text-yellow-300 uppercase tracking-wider flex items-center gap-1">
-             <Star size={10} fill="currentColor" /> {card.highlight}
-          </span>
-        </div>
-      )}
-
+      {/* Card Header Content */}
       <div className="p-6 relative z-10 flex flex-col h-full">
-        {/* Card Image and Title */}
-        <div className="flex flex-col md:flex-row items-start md:items-center gap-4 mb-6">
-            <div className="w-full md:w-32 h-20 rounded-lg bg-gray-800 relative overflow-hidden shadow-lg group-hover:shadow-cyan-500/20 transition-all">
-                <img src={card.image} alt={card.name} className="w-full h-full object-cover" />
-                {/* Glare effect */}
-                <div className="absolute inset-0 bg-gradient-to-tr from-white/10 to-transparent opacity-50" />
+            {/* Badge Row (Moved Above Image) */}
+            {card.highlight && (
+                <div className="mb-3 flex">
+                    <span className="px-2.5 py-1 bg-gradient-to-r from-yellow-500/20 to-orange-500/20 border border-yellow-500/30 rounded-lg text-[10px] font-bold text-yellow-300 uppercase tracking-wider flex items-center gap-1.5 shradow-sm">
+                        <Star size={10} fill="currentColor" /> {card.highlight}
+                    </span>
+                </div>
+            )}
+
+            <div className="flex flex-col md:flex-row gap-4 w-full mb-6">
+                {/* Image Container */}
+                <div className="relative w-full md:w-28 h-20 shrink-0 rounded-lg bg-gray-800 overflow-hidden shadow-lg group-hover:shadow-cyan-500/20 transition-all border border-white/10">
+                    <img src={card.image} alt={card.name} className="w-full h-full object-cover" />
+                    <div className="absolute inset-0 bg-gradient-to-tr from-white/10 to-transparent opacity-50" />
+                </div>
+                
+                {/* Title & Score */}
+                <div className="pt-1 flex-1 min-w-0">
+                    <h3 className="text-lg md:text-xl font-bold text-white mb-1 group-hover:text-blue-300 transition-colors truncate">
+                        {card.name}
+                    </h3>
+                    <p className="text-xs text-green-400 font-medium">98% Match Score</p>
+                </div>
             </div>
-            <div>
-                <h3 className="text-xl font-bold text-white mb-1 group-hover:text-blue-300 transition-colors">{card.name}</h3>
-                <p className="text-xs text-green-400 font-medium">98% Match Score</p>
-            </div>
-        </div>
 
         {/* Why this fits */}
         <div className="mb-4 p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">

@@ -154,33 +154,8 @@ function App() {
                    <p className="text-gray-400">Based on your last 6 months of spending.</p>
                 </div>
 
-                {/* Spending Insights Section */}
-                <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
-                    {/* Monthly Spend - Large Card */}
-                    <div className="md:col-span-4 lg:col-span-3">
-                        <SpendingCard 
-                            title="Monthly Average" 
-                            amount={spendingData.monthlySpend} 
-                            iconName="default" 
-                            color="from-green-500 to-emerald-700"
-                            className="h-full min-h-[180px]"
-                        />
-                    </div>
 
-                    {/* Top Categories - Grid */}
-                    <div className="md:col-span-8 lg:col-span-9 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                        {spendingData.topCategories.map((cat, i) => (
-                            <SpendingCard 
-                                key={cat.name}
-                                title={cat.name}
-                                amount={cat.amount}
-                                iconName={cat.icon} // Ensure SpendingCard handles mapping or pass icon directly if updated
-                                delay={i * 0.1}
-                                className="bg-white/5"
-                            />
-                        ))}
-                    </div>
-                </div>
+
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                      {/* App Usage List */}

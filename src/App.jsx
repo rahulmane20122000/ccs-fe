@@ -149,9 +149,24 @@ function App() {
   };
 
   const handleLogout = () => {
+    // Clear Session
+    const userId = localStorage.getItem('auth_userId');
+    if (userId) {
+        localStorage.removeItem(`cached_data_${userId}`);
+    }
     localStorage.removeItem('auth_token');
     localStorage.removeItem('auth_userId');
+    localStorage.removeItem('auth_userName');
+    localStorage.removeItem('auth_userPicture');
+    
+    // Clear State
     setUser(null);
+    setSpendingData(null);
+    setCards([]);
+    
+    // Reset URL to avoid re-login on refresh
+    window.history.replaceState({}, document.title, window.location.pathname);
+    
     setView('landing');
   };
 

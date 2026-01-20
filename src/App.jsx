@@ -5,7 +5,8 @@ import { Loader } from './components/Loader';
 import { SpendingCard } from './components/SpendingCard';
 import { AppUsageList } from './components/AppUsageList';
 import { CreditCardListItem } from './components/CreditCardListItem';
-import { mockAuth, mockData } from './services/api';
+
+import { mockAuth, mockData, authAPI } from './services/api';
 import { CreditCard, LogOut, Wallet } from 'lucide-react';
 
 function App() {
@@ -15,20 +16,143 @@ function App() {
   const [cards, setCards] = useState([]);
   const [isAuthLoading, setIsAuthLoading] = useState(false);
 
-  // Handle Login
-  const handleLogin = async () => {
+  const dataFetchRef = React.useRef(false);
+
+  // Check for session or callback on mount
+  useEffect(() => {
+    // Prevent double-firing in Strict Mode
+    if (dataFetchRef.current) return;
+    dataFetchRef.current = true;
+
+    const checkSession = async () => {
+      const params = new URLSearchParams(window.location.search);
+      const urlUserId = params.get('userId');
+      const urlToken = params.get('token'); 
+      const urlName = params.get('name');
+      const urlPicture = params.get('picture');
+
+      // Determine effective User ID (URL takes precedence)
+      const effectiveUserId = urlUserId || localStorage.getItem('auth_userId');
+      const effectiveToken = urlToken || localStorage.getItem('auth_token');
+
+      if (!effectiveUserId) return; // No user, stay on landing
+
+      // 0. Update Storage if URL params present
+      if (urlUserId) {
+        localStorage.setItem('auth_userId', urlUserId);
+        if (urlToken) localStorage.setItem('auth_token', urlToken);
+        if (urlName) localStorage.setItem('auth_userName', decodeURIComponent(urlName));
+        if (urlPicture) localStorage.setItem('auth_userPicture', decodeURIComponent(urlPicture));
+        
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
+
+      // 1. Check for CACHED Data to avoid API hit
+      const cachedData = localStorage.getItem(`cached_data_${effectiveUserId}`);
+      if (cachedData) {
+        try {
+           const parsedData = JSON.parse(cachedData);
+           
+           // Check if cache contains the "Pending" error state OR if it has outdated "User" fallback data
+           const isInvalidCache = parsedData.isFallback || 
+                                  (parsedData.apps && parsedData.apps.some(a => a.name === "Backend Pending")) ||
+                                  (parsedData.user && parsedData.user.name === "User"); // Force refresh to get real name/pic
+
+           if (!isInvalidCache) {
+               console.log("Restoring from VALID Cache");
+               populateDashboard(parsedData);
+               return; // Stop here, do not hit API
+           } else {
+               console.log("Invalidating bad/stale cache");
+               localStorage.removeItem(`cached_data_${effectiveUserId}`);
+           }
+        } catch (e) {
+           console.error("Cache parse error", e);
+           localStorage.removeItem(`cached_data_${effectiveUserId}`);
+        }
+      }
+
+      // 2. Fetch from API if no cache
+      await loginWithUserId(effectiveUserId, effectiveToken);
+    };
+
+    checkSession();
+  }, []);
+
+  const populateDashboard = async (data) => {
+        const userObj = data.user || {
+             name: localStorage.getItem('auth_userName') || "User", 
+             email: "user@example.com", 
+             avatar: localStorage.getItem('auth_userPicture') || "https://i.pravatar.cc/150"
+        };
+        setUser(userObj);
+        
+        let spending = { monthlySpend: 0, topCategories: [], frequentApps: [] };
+        
+        if (data.apps) {
+             spending = {
+                monthlySpend: data.totalSpend !== undefined ? data.totalSpend : 45000, 
+                topCategories: data.categories || [],
+                frequentApps: data.apps
+             };
+        } else {
+             // Basic fallback structure if data is empty
+             spending = { monthlySpend: 0, topCategories: [], frequentApps: [] };
+        }
+
+        // Fetch cards and wait before showing dashboard to avoid pop-in
+        try {
+            const suggestions = await mockData.fetchCardSuggestions();
+            setCards(suggestions);
+        } catch (err) {
+            console.error("Failed to fetch card suggestions", err);
+            setCards([]);
+        }
+
+        setSpendingData(spending);
+        setView('dashboard');
+  };
+
+  const loginWithUserId = async (userId, token) => {
     setIsAuthLoading(true);
+    setView('analyzing'); // Show loader immediately while fetching data
     try {
-      const response = await mockAuth.loginWithGoogle();
-      setUser(response.user);
-      setView('analyzing');
-      
-      // Start fetching data immediately after login transition
-      fetchData(); 
+        const data = await authAPI.getUserApps(userId, token);
+        
+        // CACHE THE RESULT ONLY IF VALID
+        if (data && !data.error && !data.isFallback) {
+            console.log("Caching fresh API data");
+            localStorage.setItem(`cached_data_${userId}`, JSON.stringify(data));
+            await populateDashboard(data);
+        } else if (data && data.isFallback) {
+             console.warn("Using fallback data (Not Caching)");
+             await populateDashboard(data);
+        } else {
+             throw new Error("Invalid data received");
+        }
     } catch (error) {
-      console.error("Login failed", error);
-      setIsAuthLoading(false);
+        console.error("Session restore failed", error);
+        // Do NOT remove userId here, allows retry on refresh
+        // Go back to landing if analysis failed
+        setView('landing'); 
+    } finally {
+        setIsAuthLoading(false);
     }
+  };
+
+
+
+  // Handle Login
+  const handleLogin = () => {
+    setIsAuthLoading(true); // Optional, visual feedback before redirect
+    authAPI.loginWithGoogle();
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('auth_token');
+    localStorage.removeItem('auth_userId');
+    setUser(null);
+    setView('landing');
   };
 
   // Simulate Data Fetching & Analysis
@@ -72,11 +196,11 @@ function App() {
                     </div>
                     <div className="flex items-center gap-4">
                         <div className="flex items-center gap-3 bg-white/5 py-1.5 px-3 rounded-full border border-white/10">
-                            <img src={user?.avatar} alt="User" className="w-6 h-6 rounded-full" />
+                            <img src={user?.avatar} alt="User" referrerPolicy="no-referrer" className="w-6 h-6 rounded-full" />
                             <span className="text-sm font-medium text-gray-300 pr-2">{user?.name}</span>
                         </div>
                         <button 
-                            onClick={() => setView('landing')}
+                            onClick={handleLogout}
                             className="p-2 hover:bg-white/10 rounded-full transition-colors text-gray-400 hover:text-white"
                         >
                             <LogOut size={20} />
@@ -152,6 +276,27 @@ function App() {
                 <div>
                    <h2 className="text-2xl font-bold mb-1">Your Financial Snapshot</h2>
                    <p className="text-gray-400">Based on your last 6 months of spending.</p>
+                </div>
+
+                {/* Spending Overview Cards */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <SpendingCard 
+                        title="Total Spend" 
+                        amount={spendingData.monthlySpend} 
+                        iconName="default" 
+                        color="bg-emerald-500" 
+                        delay={0}
+                    />
+                    {spendingData.topCategories.slice(0, 3).map((cat, i) => (
+                        <SpendingCard
+                            key={cat.name}
+                            title={cat.name}
+                            amount={cat.amount}
+                            iconName={cat.name}
+                            color={i === 0 ? "bg-blue-500" : i === 1 ? "bg-purple-500" : "bg-orange-500"}
+                            delay={0.1 * (i + 1)}
+                        />
+                    ))}
                 </div>
 
 

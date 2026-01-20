@@ -1,6 +1,127 @@
-// Mock API Service
+// API Configuration
+export const API_BASE_URL = "http://localhost:3000";
+export const AUTH_ENDPOINTS = {
+  googleLogin: `${API_BASE_URL}/auth/google/login`,
+  me: `${API_BASE_URL}/auth/me`, // Assumption: Endpoint to get user details
+};
 
 const DELAY = 2000;
+
+export const authAPI = {
+  // Real Auth Methods
+  loginWithGoogle: () => {
+    window.location.href = AUTH_ENDPOINTS.googleLogin;
+  },
+  
+  // Fetch user apps and stats
+  getUserApps: async (userId, token) => {
+    try {
+      console.log(`[API] Fetching apps for user: ${userId}...`);
+      
+      const response = await fetch(`${API_BASE_URL}/auth/getUserApps/${userId}`, {
+        mode: 'cors',
+        headers: {
+            'Accept': 'application/json'
+        }
+      });
+      
+      console.log(`[API] Headers received. Status: ${response.status}`);
+
+      if (!response.ok) {
+          const text = await response.text(); 
+          let errorMessage = `API Error ${response.status}`;
+          try {
+              const json = JSON.parse(text);
+              if (json.error) errorMessage = json.error;
+          } catch {
+              errorMessage += `: ${text}`;
+          }
+          throw new Error(errorMessage);
+      }
+
+      console.log(`[API] Parsing JSON...`);
+      const json = await response.json();
+      console.log(`[API] JSON Success:`, json);
+      if(json.user) console.log(`[API] User Info:`, json.user);
+      
+      // Transform incoming data to match App's expected structure
+      if (json.success && Array.isArray(json.data)) {
+        // Simple Category Map for better UX
+        const categoryMap = {
+          Swiggy: "Dining", Zomato: "Dining",
+          Amazon: "Shopping", Flipkart: "Shopping",
+          Myntra: "Fashion", Ajio: "Fashion", Snitch: "Fashion", Beyoung: "Fashion",
+          Nykaa: "Beauty", "Bellavitaorganic": "Beauty", "Aqualogica": "Beauty", "Bombayshavingcompany": "Personal Care",
+          Linkedin: "Professional",
+          Lenovo: "Electronics",
+          Net: "Utilities",
+          Pickrr: "Logistics", "Ithinklogistics": "Logistics"
+        };
+
+        const apps = json.data.map(item => ({
+          name: item.app,
+          count: item.count,
+          amount: item.totalFormatted,
+          total: item.total,
+          currency: item.currency,
+          category: categoryMap[item.app] || "General",
+          // Generate an icon if not provided
+          icon: `https://ui-avatars.com/api/?name=${encodeURIComponent(item.app)}&background=random&color=fff&size=128`
+        }));
+
+        const totalSpend = apps.reduce((acc, curr) => acc + (curr.total || 0), 0);
+        
+        // Calculate categories
+        const categoryGroups = apps.reduce((acc, app) => {
+            acc[app.category] = (acc[app.category] || 0) + (app.total || 0);
+            return acc;
+        }, {});
+
+        const categories = Object.keys(categoryGroups).map(cat => ({
+            name: cat,
+            amount: categoryGroups[cat],
+            icon: "Hash" // Default icon, can be mapped if needed
+        })).sort((a, b) => b.amount - a.amount);
+        
+        return {
+          user: {
+            name: json.user?.name || "User",
+            email: json.user?.email || "user@example.com", 
+            avatar: json.user?.picture || "https://i.pravatar.cc/150"
+          },
+          apps: apps,
+          totalSpend: totalSpend,
+          categories: categories
+        };
+      }
+      
+      return json;
+
+    } catch (error) {
+      console.error("[API] Request Failed:", error);
+      
+      return {
+          isFallback: true,
+          user: {
+             id: userId,
+             name: "Offline User",
+             email: "check@backend.com",
+             avatar: "https://i.pravatar.cc/150?u=error",
+          },
+          totalSpend: 0,
+          categories: [],
+          apps: [
+             { 
+               name: "Connection Failed", 
+               // Show the actual error message in the UI so the user knows WHY
+               category: error.message || "Unknown Network Error", 
+               icon: "/assets/error.svg" 
+             }
+          ]
+      };
+    }
+  }
+};
 
 export const mockAuth = {
   loginWithGoogle: async () => {

@@ -23,7 +23,21 @@ export const AppUsageList = ({ apps }) => {
                </div>
                <div>
                    <p className="font-medium text-white">{app.name}</p>
-                   <p className="text-xs text-gray-400">{app.category}</p>
+                   <div className="flex gap-2 text-xs text-gray-400">
+                      <span className={app.name === "Connection Failed" ? "text-red-400" : ""}>{app.category}</span>
+                      {app.count !== undefined && (
+                        <>
+                          <span>•</span>
+                          <span>{app.count} txns</span>
+                        </>
+                      )}
+                      {app.amount && (
+                        <>
+                          <span>•</span>
+                          <span className="text-gray-300">{app.amount}</span>
+                        </>
+                      )}
+                   </div>
                </div>
             </div>
           </motion.div>

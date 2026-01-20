@@ -1,13 +1,19 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { cn } from '../lib/utils';
-import { TrendingUp, ShoppingBag, Plane, Utensils, Film, DollarSign } from 'lucide-react';
+import { TrendingUp, ShoppingBag, Plane, Utensils, Film, DollarSign, Shirt, Sparkles, Laptop, Zap, Truck, Briefcase } from 'lucide-react';
 
 const iconMap = {
   "Dining": Utensils,
   "Travel": Plane,
   "Shopping": ShoppingBag,
   "Entertainment": Film,
+  "Fashion": Shirt,
+  "Beauty": Sparkles,
+  "Electronics": Laptop,
+  "Utilities": Zap,
+  "Logistics": Truck,
+  "Professional": Briefcase,
   "default": DollarSign
 };
 

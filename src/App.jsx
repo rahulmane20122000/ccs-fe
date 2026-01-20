@@ -4,7 +4,7 @@ import { AuthButton } from './components/AuthButton';
 import { Loader } from './components/Loader';
 import { SpendingCard } from './components/SpendingCard';
 import { AppUsageList } from './components/AppUsageList';
-import { CreditCardSuggestion } from './components/CreditCardSuggestion';
+import { CreditCardListItem } from './components/CreditCardListItem';
 import { mockAuth, mockData } from './services/api';
 import { CreditCard, LogOut, Wallet } from 'lucide-react';
 
@@ -172,9 +172,9 @@ function App() {
                             </h3>
                             <span className="text-sm text-cyan-400 cursor-pointer hover:underline">View all matches</span>
                          </div>
-                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                         <div className="flex flex-col gap-4">
                              {cards.map((card, i) => (
-                                 <CreditCardSuggestion key={card.id} card={card} index={i} />
+                                 <CreditCardListItem key={card.id} card={card} index={i} />
                              ))}
                          </div>
                      </div>

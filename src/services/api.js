@@ -18,7 +18,7 @@ export const authAPI = {
     try {
       console.log(`[API] Fetching apps for user: ${userId}...`);
       
-      const response = await fetch(`${API_BASE_URL}/auth/getUserApps/${userId}`, {
+      const response = await fetch(`${API_BASE_URL}/user-apps/${userId}`, {
         mode: 'cors',
         headers: {
             'Accept': 'application/json'

@@ -282,11 +282,13 @@ function App() {
                 className="fixed top-0 left-0 right-0 z-50 bg-black/20 backdrop-blur-md border-b border-white/10"
             >
                 <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
-                    <img 
-                        src="/logo.png" 
-                        alt="PaisaSense" 
-                        className="h-56 w-auto object-contain"
-                    />
+                    <div className="flex items-center">
+                        <img 
+                            src="/logo.png" 
+                            alt="PaisaSense" 
+                            className="h-56 w-auto object-contain"
+                        />
+                    </div>
                     <ProfileDropdown 
                         user={user}
                         onLogout={handleLogout}

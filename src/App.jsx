@@ -141,10 +141,66 @@ function App() {
         // CACHE THE RESULT ONLY IF VALID
         if (data && !data.error && !data.isFallback) {
             console.log("Caching fresh API data");
-            localStorage.setItem(`cached_data_${userId}`, JSON.stringify(data));
-            await populateDashboard(data);
             
-            // ✅ REMOVED: Automatic background sync
+            // ✅ Check if data is empty (first time user or no synced data)
+            const hasNoData = !data.apps || data.apps.length === 0;
+            
+            if (hasNoData) {
+                console.log("📭 No data found in DB, triggering automatic sync...");
+                
+                // Show dashboard with loading placeholder
+                const loadingData = {
+                    ...data,
+                    apps: [{
+                        name: "Analyzing",
+                        category: "Please wait while we analyze your spending...",
+                        count: 0,
+                        amount: "...",
+                        total: 0,
+                        currency: "₹",
+                        icon: "https://ui-avatars.com/api/?name=...&background=667eea&color=fff&size=128",
+                        isLoading: true // ✅ Flag to show special UI
+                    }]
+                };
+                
+                await populateDashboard(loadingData);
+                
+                // ✅ Trigger automatic background sync
+                authAPI.syncUserApps(userId, token)
+                    .then(syncedData => {
+                        console.log("✅ Automatic sync complete, updating UI");
+                        // Cache and update UI with real data
+                        localStorage.setItem(`cached_data_${userId}`, JSON.stringify(syncedData));
+                        setSpendingData({
+                            monthlySpend: syncedData.totalSpend || 0,
+                            topCategories: syncedData.categories || [],
+                            frequentApps: syncedData.apps || []
+                        });
+                    })
+                    .catch(err => {
+                        console.error("Automatic sync failed:", err);
+                        // Show error state
+                        setSpendingData({
+                            monthlySpend: 0,
+                            topCategories: [],
+                            frequentApps: [{
+                                name: "Sync Failed",
+                                category: err.message || "Please try clicking Resync Data button",
+                                count: 0,
+                                amount: "₹0",
+                                total: 0,
+                                currency: "₹",
+                                icon: "https://ui-avatars.com/api/?name=!&background=ef4444&color=fff&size=128"
+                            }]
+                        });
+                    });
+            } else {
+                // Has data - show it normally
+                localStorage.setItem(`cached_data_${userId}`, JSON.stringify(data));
+                await populateDashboard(data);
+            }
+            
+            // ✅ REMOVED: Automatic background sync for existing data
             // The first fetch now returns ALL accounts' cached data
             // User can manually trigger sync with the Resync button if needed
         } else if (data && data.isFallback) {

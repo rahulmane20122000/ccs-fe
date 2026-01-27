@@ -32,22 +32,22 @@ export const AppUsageList = ({ apps }) => {
             >
               <div className="flex items-center gap-4">
                 {/* Brand logo with fallback */}
-                <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center overflow-hidden border border-white/10 shrink-0">
+                <div className={`w-10 h-10 rounded-full bg-white flex items-center justify-center overflow-hidden border border-white/10 shrink-0 ${app.isLoading ? 'animate-pulse' : ''}`}>
                   <img 
                     src={app.icon} 
                     alt={app.name} 
-                    className="w-full h-full object-contain p-1.5" 
+                    className={`w-full h-full object-contain p-1.5 ${app.isLoading ? 'opacity-50' : ''}`}
                     onError={(e) => {
                       // Fallback to text avatar if logo fails to load
                       e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(app.name)}&background=667eea&color=fff&size=128&bold=true`;
                     }}
                   />
                 </div>
-                <div>
+                <div className={app.isLoading ? 'animate-pulse' : ''}>
                   <p className="font-medium text-white">{app.name}</p>
                   <div className="flex gap-2 text-xs text-gray-400">
-                    <span className={app.name === "Connection Failed" ? "text-red-400" : ""}>{app.category}</span>
-                    {app.count !== undefined && (
+                    <span className={`${app.name === "Connection Failed" ? "text-red-400" : ""} ${app.isLoading ? "text-cyan-400" : ""}`}>{app.category}</span>
+                    {app.count !== undefined && !app.isLoading && (
                       <>
                         <span>•</span>
                         <span>{app.count} txns</span>

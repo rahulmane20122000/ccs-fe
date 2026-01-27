@@ -1,4 +1,6 @@
 // API Configuration
+import { getBrandLogo } from './logoService';
+
 export const API_BASE_URL = "http://localhost:3000";
 export const AUTH_ENDPOINTS = {
   googleLogin: `${API_BASE_URL}/auth/google/login`,
@@ -65,8 +67,8 @@ export const authAPI = {
           total: item.total,
           currency: item.currency,
           category: categoryMap[item.app] || "General",
-          // Generate an icon if not provided
-          icon: `https://ui-avatars.com/api/?name=${encodeURIComponent(item.app)}&background=random&color=fff&size=128`
+          // ✅ Use real brand logos from Clearbit API
+          icon: getBrandLogo(item.app)
         }));
 
         const totalSpend = apps.reduce((acc, curr) => acc + (curr.total || 0), 0);

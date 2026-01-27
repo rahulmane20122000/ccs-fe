@@ -67,7 +67,12 @@ function App() {
            const parsedData = JSON.parse(cachedData);
            
            // Check if cache contains the "Pending" error state OR if it has outdated "User" fallback data
+           const hasOldIconUrls = parsedData.apps && parsedData.apps.some(a => 
+             a.icon && a.icon.includes('ui-avatars.com') && a.icon.includes('background=random')
+           );
+           
            const isInvalidCache = parsedData.isFallback || 
+                                  hasOldIconUrls || // ✅ Invalidate if using old random avatar URLs
                                   (parsedData.apps && parsedData.apps.some(a => a.name === "Backend Pending")) ||
                                   (parsedData.user && parsedData.user.name === "User"); // Force refresh to get real name/pic
 

@@ -15,7 +15,7 @@ export const authAPI = {
     window.location.href = AUTH_ENDPOINTS.googleLogin;
   },
   
-  // Fetch user apps and stats
+  // Fetch user apps from cache (fast!)
   getUserApps: async (userId, token) => {
     try {
       console.log(`[API] Fetching apps for user: ${userId}...`);
@@ -43,7 +43,7 @@ export const authAPI = {
 
       console.log(`[API] Parsing JSON...`);
       const json = await response.json();
-      console.log(`[API] JSON Success:`, json);
+      console.log(`[API] JSON Success (cached=${json.cached}):`, json);
       if(json.user) console.log(`[API] User Info:`, json.user);
       
       // Transform incoming data to match App's expected structure
@@ -67,7 +67,7 @@ export const authAPI = {
           total: item.total,
           currency: item.currency,
           category: categoryMap[item.app] || "General",
-          // ✅ Use real brand logos from Clearbit API
+          // ✅ Use real brand logos
           icon: getBrandLogo(item.app)
         }));
 
@@ -86,6 +86,7 @@ export const authAPI = {
         })).sort((a, b) => b.amount - a.amount);
         
         return {
+          cached: json.cached, // ✅ Indicate if cached
           user: {
             name: json.user?.name || "User",
             email: json.user?.email || "user@example.com", 
@@ -121,6 +122,83 @@ export const authAPI = {
              }
           ]
       };
+    }
+  },
+
+  // ✅ NEW: Trigger sync (runs in background)
+  syncUserApps: async (userId, token) => {
+    try {
+      console.log(`[API] Starting sync for user: ${userId}...`);
+      
+      const response = await fetch(`${API_BASE_URL}/user-apps/sync/${userId}`, {
+        method: 'POST',
+        mode: 'cors',
+        headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+          throw new Error(`Sync failed: ${response.status}`);
+      }
+
+      const json = await response.json();
+      console.log(`[API] Sync complete:`, json);
+
+      // Transform same way as getUserApps
+      if (json.success && Array.isArray(json.data)) {
+        const categoryMap = {
+          Swiggy: "Dining", Zomato: "Dining",
+          Amazon: "Shopping", Flipkart: "Shopping",
+          Myntra: "Fashion", Ajio: "Fashion", Snitch: "Fashion", Beyoung: "Fashion",
+          Nykaa: "Beauty", "Bellavitaorganic": "Beauty", "Aqualogica": "Beauty", "Bombayshavingcompany": "Personal Care",
+          Linkedin: "Professional",
+          Lenovo: "Electronics",
+          Net: "Utilities",
+          Pickrr: "Logistics", "Ithinklogistics": "Logistics"
+        };
+
+        const apps = json.data.map(item => ({
+          name: item.app,
+          count: item.count,
+          amount: item.totalFormatted,
+          total: item.total,
+          currency: item.currency,
+          category: categoryMap[item.app] || "General",
+          icon: getBrandLogo(item.app)
+        }));
+
+        const totalSpend = apps.reduce((acc, curr) => acc + (curr.total || 0), 0);
+        
+        const categoryGroups = apps.reduce((acc, app) => {
+            acc[app.category] = (acc[app.category] || 0) + (app.total || 0);
+            return acc;
+        }, {});
+
+        const categories = Object.keys(categoryGroups).map(cat => ({
+            name: cat,
+            amount: categoryGroups[cat],
+            icon: "Hash"
+        })).sort((a, b) => b.amount - a.amount);
+        
+        return {
+          synced: true, // ✅ Indicate synced data
+          user: {
+            name: json.user?.name || "User",
+            email: json.user?.email || "user@example.com", 
+            avatar: json.user?.picture || "https://i.pravatar.cc/150"
+          },
+          apps: apps,
+          totalSpend: totalSpend,
+          categories: categories
+        };
+      }
+      
+      return json;
+    } catch (error) {
+      console.error("[API] Sync Failed:", error);
+      throw error; // Let caller handle
     }
   },
 

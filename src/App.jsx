@@ -7,6 +7,7 @@ import { AppUsageList } from './components/AppUsageList';
 import { CreditCardListItem } from './components/CreditCardListItem';
 import ProfileDropdown from './components/ProfileDropdown';
 import LinkedAccountsModal from './components/LinkedAccountsModal';
+import { ResyncButton } from './components/ResyncButton';
 import './components/LinkedAccounts.css';
 
 import { mockAuth, mockData, authAPI } from './services/api';
@@ -142,6 +143,10 @@ function App() {
             console.log("Caching fresh API data");
             localStorage.setItem(`cached_data_${userId}`, JSON.stringify(data));
             await populateDashboard(data);
+            
+            // ✅ REMOVED: Automatic background sync
+            // The first fetch now returns ALL accounts' cached data
+            // User can manually trigger sync with the Resync button if needed
         } else if (data && data.isFallback) {
              console.warn("Using fallback data (Not Caching)");
              await populateDashboard(data);
@@ -299,9 +304,24 @@ function App() {
                 className="w-full max-w-7xl mx-auto px-6 pt-24 pb-12 flex flex-col gap-8"
             >
                 {/* Header */}
-                <div>
-                   <h2 className="text-2xl font-bold mb-1">Your Financial Snapshot</h2>
-                   <p className="text-gray-400">Based on your last 6 months of spending.</p>
+                <div className="flex items-center justify-between mb-4">
+                   <div>
+                      <h2 className="text-2xl font-bold mb-1">Your Financial Snapshot</h2>
+                      <p className="text-gray-400">Based on your last 6 months of spending.</p>
+                   </div>
+                   {/* ✅ Resync Button */}
+                   {user && (
+                     <ResyncButton 
+                       userId={localStorage.getItem('auth_userId')} 
+                       onSyncComplete={(data) => {
+                         setSpendingData({
+                           monthlySpend: data.totalSpend || 0,
+                           topCategories: data.categories || [],
+                           frequentApps: data.apps || []
+                         });
+                       }}
+                     />
+                   )}
                 </div>
 
                 {/* Spending Overview Cards */}

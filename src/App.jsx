@@ -281,13 +281,12 @@ function App() {
                 animate={{ y: 0 }}
                 className="fixed top-0 left-0 right-0 z-50 bg-black/20 backdrop-blur-md border-b border-white/10"
             >
-                <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-blue-500 to-purple-600 flex items-center justify-center">
-                            <CreditCard size={18} className="text-white" />
-                        </div>
-                        <span className="font-bold text-lg tracking-wide">CardSuggest</span>
-                    </div>
+                <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+                    <img 
+                        src="/logo.png" 
+                        alt="PaisaSense" 
+                        className="h-56 w-auto object-contain"
+                    />
                     <ProfileDropdown 
                         user={user}
                         onLogout={handleLogout}
@@ -357,7 +356,7 @@ function App() {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.5 }}
-                className="w-full max-w-7xl mx-auto px-6 pt-24 pb-12 flex flex-col gap-8"
+                className="w-full max-w-7xl mx-auto px-6 pt-28 pb-12 flex flex-col gap-8"
             >
                 {/* Header */}
                 <div className="flex items-center justify-between mb-4">

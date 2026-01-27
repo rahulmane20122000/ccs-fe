@@ -120,6 +120,55 @@ export const authAPI = {
           ]
       };
     }
+  },
+
+  // Linked Accounts Functions
+  linkGoogleAccount: (userId) => {
+    // Redirect to link account flow
+    window.location.href = `${API_BASE_URL}/linked-accounts/link?userId=${userId}`;
+  },
+
+  getLinkedAccounts: async (userId) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/linked-accounts/${userId}`, {
+        mode: 'cors',
+        headers: {
+          'Accept': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch linked accounts: ${response.status}`);
+      }
+
+      const json = await response.json();
+      return json.success ? json.data : [];
+    } catch (error) {
+      console.error("[API] Failed to get linked accounts:", error);
+      return [];
+    }
+  },
+
+  unlinkAccount: async (userId, accountId) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/linked-accounts/${userId}/${accountId}`, {
+        method: 'DELETE',
+        mode: 'cors',
+        headers: {
+          'Accept': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to unlink account: ${response.status}`);
+      }
+
+      const json = await response.json();
+      return json.success;
+    } catch (error) {
+      console.error("[API] Failed to unlink account:", error);
+      return false;
+    }
   }
 };
 

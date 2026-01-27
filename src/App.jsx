@@ -5,9 +5,12 @@ import { Loader } from './components/Loader';
 import { SpendingCard } from './components/SpendingCard';
 import { AppUsageList } from './components/AppUsageList';
 import { CreditCardListItem } from './components/CreditCardListItem';
+import ProfileDropdown from './components/ProfileDropdown';
+import LinkedAccountsModal from './components/LinkedAccountsModal';
+import './components/LinkedAccounts.css';
 
 import { mockAuth, mockData, authAPI } from './services/api';
-import { CreditCard, LogOut, Wallet } from 'lucide-react';
+import { CreditCard, Wallet } from 'lucide-react';
 
 function App() {
   const [view, setView] = useState('landing'); // landing, analyzing, dashboard
@@ -15,6 +18,7 @@ function App() {
   const [spendingData, setSpendingData] = useState(null);
   const [cards, setCards] = useState([]);
   const [isAuthLoading, setIsAuthLoading] = useState(false);
+  const [showLinkedAccountsModal, setShowLinkedAccountsModal] = useState(false);
 
   const dataFetchRef = React.useRef(false);
 
@@ -30,6 +34,15 @@ function App() {
       const urlToken = params.get('token'); 
       const urlName = params.get('name');
       const urlPicture = params.get('picture');
+      const error = params.get('error');
+      const errorMessage = params.get('message');
+
+      // ✅ Handle login errors (e.g., trying to login with a linked account)
+      if (error === 'linked_account_login') {
+        alert(errorMessage || 'This account is linked to another user. Please login with your primary account instead.');
+        window.history.replaceState({}, document.title, window.location.pathname);
+        return;
+      }
 
       // Determine effective User ID (URL takes precedence)
       const effectiveUserId = urlUserId || localStorage.getItem('auth_userId');
@@ -209,18 +222,11 @@ function App() {
                         </div>
                         <span className="font-bold text-lg tracking-wide">CardSuggest</span>
                     </div>
-                    <div className="flex items-center gap-4">
-                        <div className="flex items-center gap-3 bg-white/5 py-1.5 px-3 rounded-full border border-white/10">
-                            <img src={user?.avatar} alt="User" referrerPolicy="no-referrer" className="w-6 h-6 rounded-full" />
-                            <span className="text-sm font-medium text-gray-300 pr-2">{user?.name}</span>
-                        </div>
-                        <button 
-                            onClick={handleLogout}
-                            className="p-2 hover:bg-white/10 rounded-full transition-colors text-gray-400 hover:text-white"
-                        >
-                            <LogOut size={20} />
-                        </button>
-                    </div>
+                    <ProfileDropdown 
+                        user={user}
+                        onLogout={handleLogout}
+                        onOpenAccounts={() => setShowLinkedAccountsModal(true)}
+                    />
                 </div>
             </motion.nav>
         )}
@@ -345,6 +351,13 @@ function App() {
 
         </AnimatePresence>
       </main>
+
+      {/* Linked Accounts Modal */}
+      <LinkedAccountsModal 
+        isOpen={showLinkedAccountsModal}
+        onClose={() => setShowLinkedAccountsModal(false)}
+        userId={localStorage.getItem('auth_userId')}
+      />
     </div>
   );
 }
